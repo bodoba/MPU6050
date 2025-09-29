@@ -34,26 +34,29 @@
 
 #include "MPU6050.h"
 
+/* *********************************************************************************** *
+ * @brief Update thread
+ *
+ * Combined sensor data to compute accumulated angle for the three axis 
+ *
+ * Note: Thread is started only then parameter 'update' in init function is set to 'true'
+ * *********************************************************************************** */
 void *_update(void *arg);
 
-static float _accel_angle[3];
-static float _gyro_angle[3];
-static float _angle[3]; //Store all angles (accel roll, accel pitch, accel yaw, gyro roll, gyro pitch, gyro yaw, comb roll, comb pitch comb yaw)
-static float ax, ay, az, gr, gp, gy; //Temporary storage variables used in _update()
-static float dt; //Loop time (recalculated with each loop)
-// static struct timespec start,end; //Create a time structure
-static bool _first_run = 1; //Variable for whether to set gyro angle to acceleration angle in compFilter
+// Data used to communicate with _update thread 
+static float _angle[3];      
+static bool  _calc_yaw = false;
+static bool  _run_update = false;
 
-static int  dev      = -1;
-static bool calc_yaw = false;
+// I2C file handle
+static int  dev  = -1;
 
 int mpu6050Init(int addr, bool update, bool yaw) {
     dev = wiringPiI2CSetup(addr);
     int status;
-
-	dt = 0.009;     //Loop time (recalculated with each loop)
-	_first_run = 1; //Variable for whether to set gyro angle to acceleration angle in compFilter
-	calc_yaw = yaw;
+	
+    _calc_yaw = yaw;
+    _run_update = update;
 
 	wiringPiI2CWriteReg8(dev, 0x6b, 0b00000000);   //Take MPU6050 out of sleep mode - see Register Map
 	wiringPiI2CWriteReg8(dev, 0x1a, 0b00000011);   //Set DLPF (low pass filter) to 44Hz (so no noise above 44Hz will pass through)
@@ -72,7 +75,7 @@ int mpu6050Init(int addr, bool update, bool yaw) {
     wiringPiI2CWriteReg8(dev, 0x01, 0b00000001);
     wiringPiI2CWriteReg8(dev, 0x02, 0b10000001);
 
-    if (update) {
+    if (_update) {
         pthread_t updateThread;
         int threadId=1;
 
@@ -172,19 +175,126 @@ void mpu6050GetOffsets(float *ax_off, float *ay_off, float *az_off, float *gr_of
     printf("#define G_OFF_Z % 8d\n\n", (int)*gy_off);
 }
 
-int mpu6050GetAngle(int axis, float *result) {
+
+
+bool mpu6050GetAngle(int axis, float *result) {
+    if (!_run_update) {
+        fprintf(stderr,"ERR (%s) Calculation of 'Angles' has been disabled (param update set to false in init call)\n", __func__);
+		*result = 0;  // Set result to zero
+		return false;
+    }
+
 	if (axis >= 0 && axis <= 2) { //Check that the axis is in the valid range
 		*result = _angle[axis]; //Get the result
-		return 0;
+		return true;
 	}
 	else {
-//		std::cout << "ERR (MPU6050.cpp:getAngle()): 'axis' must be between 0 and 2 (for roll, pitch or yaw)\n"; //Print error message
-		*result = 0; //Set result to zero
-		return 1;
+        fprintf(stderr,"ERR (%s) 'axis' must be between 0 and 2 (for roll, pitch or yaw)\n", __func__);
+		*result = 0;  // Set result to zero
+		return false;
 	}
 }
 
-// Update thread, runs continiously
+bool mpu6050GetAngles(float *x, float *y, float *z) {
+    if (!_run_update) {
+        fprintf(stderr,"ERR (%s) Calculation of 'Angles' has been disabled (param update set to false in init call)\n", __func__);
+		// Set result to zero
+        *x = 0;  
+        *y = 0;  
+        *z = 0;  
+		return false;
+    } else {
+        // Set results
+        *x = _angle[0];  
+        *y = _angle[1];  
+        *z = _angle[2];  
+        return true;
+    }
+}
+
+// Update thread to keep accumulate data to keep angles, runs continiously
 void *_update(void *arg) {
-    delay(1000);
+    float ax, ay, az, gr, gp, gy;  // Temporary storage variables used in _update()
+    static float dt=0.009;         // Loop time (recalculated with each loop)
+    bool first_run = true;         // Whether to set gyro angle to acceleration angle in compFilter
+    struct timespec start,end;     // Create a time structure to calculate looptime
+    float _accel_angle[3];         // accel roll, accel pitch, accel yaw
+    float _gyro_angle[3];          // gyro roll, gyro pitch, gyro yaw
+
+
+    clock_gettime(CLOCK_REALTIME, &start); // Read current time into start variable
+
+    // Loop forever
+	while (1) { 
+        // Get the data from the sensors
+		mpu6050GetGyro(&gr, &gp, &gy);             
+		mpu6050GetAccel(&ax, &ay, &az);
+
+		// X (roll) axis
+        // Calculate the angle with z and y convert to degrees and subtract 90 degrees to rotate
+		_accel_angle[0] = atan2(az, ay) * RAD_T_DEG - 90.0; 
+		_gyro_angle[0] = _angle[0] + gr*dt;                    // Use roll axis (X axis)
+
+		// Y (pitch) axis
+        // Calculate the angle with z and x convert to degrees and subtract 90 degrees to rotate
+		_accel_angle[1] = atan2(az, ax) * RAD_T_DEG - 90.0; 
+		_gyro_angle[1] = _angle[1] + gp*dt;                    // Use pitch axis (Y axis)
+
+		// Z (yaw) axis
+		if (_calc_yaw) {
+			_gyro_angle[2] = _angle[2] + gy*dt;                // Use yaw axis (Z axis)
+		}
+
+		if (first_run) {
+            // Set the gyroscope angle reference point if this is the first function run
+			for (int i = 0; i <= 1; i++) {
+                // Start off with angle from accelerometer (absolute angle since gyroscope is relative)
+				_gyro_angle[i] = _accel_angle[i];
+			}
+            // Set the yaw axis to zero (because the angle cannot be calculated with the accelerometer when vertical)
+			_gyro_angle[2] = 0;
+			first_run = false;
+		}
+
+		float asum = abs(ax) + abs(ay) + abs(az); //Calculate the sum of the accelerations
+		float gsum = abs(gr) + abs(gp) + abs(gy); //Calculate the sum of the gyro readings
+
+        // Loop through roll and pitch axes
+		for (int i = 0; i <= 1; i++) {
+            // Correct for very large drift (or incorrect measurment of gyroscope by longer loop time) 
+			if (abs(_gyro_angle[i] - _accel_angle[i]) > 5) { 
+				_gyro_angle[i] = _accel_angle[i];
+			}
+
+			// Create result from either complementary filter or directly from gyroscope or accelerometer depending on conditions
+            // Check that th movement is not very high (therefore providing inacurate angles)
+			if (asum > 0.1 && asum < 3 && gsum > 0.3) { 
+                // Calculate the angle using a complementary filter
+				_angle[i] = (1 - TAU)*(_gyro_angle[i]) + (TAU)*(_accel_angle[i]); 
+			}
+			else if (gsum > 0.3) { 
+                // Use the gyroscope angle if the acceleration is high
+				_angle[i] = _gyro_angle[i];
+			}
+			else if (gsum <= 0.3) {
+                // Use accelerometer angle if not much movement
+				_angle[i] = _accel_angle[i];
+			}
+		}
+
+		// The yaw axis will not work with the accelerometer angle, so only use gyroscope angle
+		if (_calc_yaw) {
+            // Only calculate the angle when we want it to prevent large drift
+			_angle[2] = _gyro_angle[2];
+		}
+		else {
+			_angle[2] = 0;
+			_gyro_angle[2] = 0;
+		}
+
+        // Calculate new looptime dt
+		clock_gettime(CLOCK_REALTIME, &end);
+		dt = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9; 
+		clock_gettime(CLOCK_REALTIME, &start);
+	}
 }

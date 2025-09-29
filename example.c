@@ -29,9 +29,10 @@
 #define MPU6050_ADDR   0x68
 
 int main(int argc, char* argv[]) {
-    int mpu6050 = mpu6050Init(MPU6050_ADDR,true, false);
-    float roll, pitch, yaw; // Gyroskope
-    float x, y, z;          // Accelerometer
+    int mpu6050 = mpu6050Init(MPU6050_ADDR, true, true);
+    float roll, pitch, yaw;        // Gyroskope
+    float x, y, z;                 // Accelerometer
+    float angleX, angleY, angleZ;  // Combined values
 
     if ( mpu6050 < 0 ) {
         fprintf( stderr, "ERROR: MPU6050 not found at 0x%02x\n", MPU6050_ADDR);
@@ -40,9 +41,18 @@ int main(int argc, char* argv[]) {
 
     // Read and display gyro and accel input
     for(;;) {
+        // read current sensor data
         mpu6050GetGyro(&roll, &pitch, &yaw);
-        mpu6050GetAccel(&x, &y, &z); 
-        printf("|Roll: % 8.3f | Pitch: % 8.3f | Yaw: % 8.3f | Y: % 8.3f | X: % 8.3f | Z: % 8.3f|\n", roll, pitch, yaw, x, y, z);
-        usleep(10000);
+        mpu6050GetAccel(&x, &y, &z);
+        
+        // get accu,ulated angels
+        mpu6050GetAngles(&angleX, &angleY, &angleZ);
+
+        printf("| Gyro: % 8.3f % 8.3f % 8.3f | Accel % 8.3f % 8.3f % 8.3f| Angle % 8.3f % 8.3f % 8.3f\n", 
+                roll, pitch, yaw, 
+                x, y, z,
+                angleX, angleY, angleZ);
+        
+        usleep(100000);
     }
 }

@@ -43,6 +43,11 @@
 // See the MPU6000 Register Map for more information
 
 
+// Axis for getAngle function
+#define MPU6050_X  0
+#define MPU6050_Y  1
+#define MPU6050_Z  2
+
 // Offsets - calculated with mpu6050GetOffsets function
 
 // Accelerometer
@@ -172,14 +177,32 @@ void mpu6050GetGyro(float *x, float *y, float *z);
 void mpu6050GetGyroRaw(float *x, float *y, float *z);
 
 /* *********************************************************************************** *
- * @brief gets the current combined (accelerometer and gyroscope) angle
+ * @brief gets the current combined (accelerometer and gyroscope) angle for an 
+ *        individual axis
  *
+ * NOTE: Works only when parameter 'update' of init function has been set to 'true' 
+ * 
  * NOTE: the yaw axis will return 0 unless 'yaw' is set to true - See Parameters
- * of mpu6050Init
+ *       of mpu6050Init
  * 
  * @param  axis which axis to use (0 for roll (x), 1 for pitch (Y) and 2 for yaw (Z))
  * @param  *result pointer to the variable where the angle will be stored
- * @return 
+ * @return true on success, false on error
  * *********************************************************************************** */
-int mpu6050GetAngle(int axis, float *result);
+bool mpu6050GetAngle(int axis, float *result);
+
+/* *********************************************************************************** *
+ * @brief gets the current combined (accelerometer and gyroscope) angle for all axis
+ *
+ * NOTE: Works only when parameter 'update' of init function has been set to 'true' 
+ * 
+ * NOTE: the yaw axis will return 0 unless 'yaw' is set to true - See Parameters
+ *       of mpu6050Init
+ * 
+ * @param  *x pointer to the variable where the X angle will be stored
+ * @param  *y pointer to the variable where the Y angle will be stored
+ * @param  *z pointer to the variable where the Z angle will be stored
+ * @return  true on success, false on error
+ * *********************************************************************************** */
+bool mpu6050GetAngles(float *x, float *y, float *z);
 #endif
