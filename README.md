@@ -32,21 +32,21 @@ For the accelerometer and the gyroscope reading you can get either the raw value
 
 Each call has pointers to the variables for X, Y, and Z velues as parameter.
 
-```void mpu6050GetAccel(float *x, float *y, float *z)```
+* ```void mpu6050GetAccel(float *x, float *y, float *z)```
 
-Gets the raw accelerometer values from the MPU6050 registers
+  * Gets the raw accelerometer values from the MPU6050 registers
 
-```void mpu6050GetAccelRaw(float *x, float *y, float *z)```
+* ```void mpu6050GetAccelRaw(float *x, float *y, float *z)```
 
-Gets the gyroscope values (in degrees/second)
+  * Gets the gyroscope values (in degrees/second)
 
-```void mpu6050GetGyroRaw(float *x, float *y, float *z)```
+* ```void mpu6050GetGyroRaw(float *x, float *y, float *z)```
 
-Gets the raw gyroscope values from the MPU6050 registers
+  * Gets the raw gyroscope values from the MPU6050 registers
 
-```void mpu6050GetGyro(float *x, float *y, float *z)```
+* ```void mpu6050GetGyro(float *x, float *y, float *z)```
 
-Gets the gyroscope values (in degrees/second)
+  * Gets the gyroscope values (in degrees/second)
 
 ### Get accumulated change in angles
 
@@ -54,22 +54,22 @@ To get the angles the device turned since initialization of the sensor, a orker 
 
 You can either request the angle of a single axis, or all values at once. Both functions return ```true``` on success and ```false``` on error.
 
-> [!Note] This works only when parameter ```update``` of ```mpu6050Init``` has been set to ```true```.
+> [!NOTE] This works only when parameter ```update``` of ```mpu6050Init``` has been set to ```true```.
 
-> [!Note] The value for yaw (Z axis) will return ```0``` unless ```yaw``` is set to true in the ```mpu6050Init``` call.
+> [!NOTE] The value for yaw (Z axis) will return ```0``` unless ```yaw``` is set to true in the ```mpu6050Init``` call.
 
-```bool mpu6050GetAngle(int axis, float *result)```
+* ```bool mpu6050GetAngle(int axis, float *result)```
 
-gets the current combined (accelerometer and gyroscope) angle for an individual axis
+  * Gets the current combined (accelerometer and gyroscope) angle for an individual axis
 
-* ```axis``` axis which axis to use (0 for roll (x), 1 for pitch (Y) and 2 for yaw (Z))
+  * ```axis``` axis which axis to use (0 for roll (x), 1 for pitch (Y) and 2 for yaw (Z))
 
-* ```result``` pointer to the variable where the angle will be stored
+  * ```result``` pointer to the variable where the angle will be stored
 
 
-```bool mpu6050GetAngles(float *x, float *y, float *z)```
+* ```bool mpu6050GetAngles(float *x, float *y, float *z)```
 
-gets the current combined (accelerometer and gyroscope) angle for all axis. The paramters are pointers to the variables for X, Y, and Z velues as parameter.
+  * gets the current combined (accelerometer and gyroscope) angle for all axis. The paramters are pointers to the variables for X, Y, and Z velues as parameter.
 
 ## Example
 
