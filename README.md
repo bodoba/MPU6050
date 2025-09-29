@@ -73,6 +73,13 @@ You can either request the angle of a single axis, or all values at once. Both f
 
   * gets the current combined (accelerometer and gyroscope) angle for all axis. The paramters are pointers to the variables for X, Y, and Z velues as parameter.
 
+* ```void mpu6050SetYaw(float z)```
+
+  * Set 'yaw' angle to given value to counteract drift in the Z axis. This function can be used to set the yaw to a 
+  given value. All subsequent updates will be realitve to the set value. (is set to 0 at first run)
+
+  * ```z``` New value for yaw (Z axis)
+
 ## Example
 
 This code will setup the sensor and produce a list of readings:

@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 # Build on RPI target
-host=192.168.100.103
+host=192.168.100.101
 proj=MPU6050
 
 

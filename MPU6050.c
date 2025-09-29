@@ -45,6 +45,9 @@ void *_update(void *arg);
 
 // Data used to communicate with _update thread 
 static float _angle[3];      
+static float _accel_angle[3];
+static float _gyro_angle[3];
+
 static bool  _calc_yaw = false;
 static bool  _run_update = false;
 
@@ -218,9 +221,6 @@ void *_update(void *arg) {
     static float dt=0.009;         // Loop time (recalculated with each loop)
     bool first_run = true;         // Whether to set gyro angle to acceleration angle in compFilter
     struct timespec start,end;     // Create a time structure to calculate looptime
-    float _accel_angle[3];         // accel roll, accel pitch, accel yaw
-    float _gyro_angle[3];          // gyro roll, gyro pitch, gyro yaw
-
 
     clock_gettime(CLOCK_REALTIME, &start); // Read current time into start variable
 
@@ -297,4 +297,9 @@ void *_update(void *arg) {
 		dt = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9; 
 		clock_gettime(CLOCK_REALTIME, &start);
 	}
+}
+
+void mpu6050SetYaw(float z) {
+	_angle[2]      = z;
+	_gyro_angle[2] = z;	
 }

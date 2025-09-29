@@ -51,14 +51,14 @@
 // Offsets - calculated with mpu6050GetOffsets function
 
 // Accelerometer
-#define A_OFF_X     9763
-#define A_OFF_Y    -1683
-#define A_OFF_Z    -4811
+#define A_OFF_X     9827
+#define A_OFF_Y    -1641
+#define A_OFF_Z    -4787
 
 // Gyroscope
-#define G_OFF_X     -236
-#define G_OFF_Y      -76
-#define G_OFF_Z     -158
+#define G_OFF_X     -227
+#define G_OFF_Y      -79
+#define G_OFF_Z     -183
 
 //-----------------------END MODIFY THESE PARAMETERS-----------------------
 
@@ -205,4 +205,17 @@ bool mpu6050GetAngle(int axis, float *result);
  * @return  true on success, false on error
  * *********************************************************************************** */
 bool mpu6050GetAngles(float *x, float *y, float *z);
+
+/* *********************************************************************************** *
+ * @brief Set 'yaw' angle to given value
+ * 
+ * To counteract drift in the Z axis, this function can be used to set the yaw to a 
+ * given value. All subsequent updates will be realitve to the set value.
+ * 
+ * (is set to 0 at first run)
+ *  
+ * @param z New value for yaw (Z axis)
+ * *********************************************************************************** */
+void mpu6050SetYaw(float z);
+
 #endif
