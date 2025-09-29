@@ -54,9 +54,11 @@ To get the angles the device turned since initialization of the sensor, a orker 
 
 You can either request the angle of a single axis, or all values at once. Both functions return ```true``` on success and ```false``` on error.
 
-> [!NOTE] This works only when parameter ```update``` of ```mpu6050Init``` has been set to ```true```.
+> [!NOTE]
+> This works only when parameter ```update``` of ```mpu6050Init``` has been set to ```true```.
 
-> [!NOTE] The value for yaw (Z axis) will return ```0``` unless ```yaw``` is set to true in the ```mpu6050Init``` call.
+> [!NOTE]
+> The value for yaw (Z axis) will return ```0``` unless ```yaw``` is set to true in the ```mpu6050Init``` call.
 
 * ```bool mpu6050GetAngle(int axis, float *result)```
 
